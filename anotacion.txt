@@ -1,0 +1,6 @@
+// Anotaciones de postgre para sunakki
+create user aldo SUPERUSER CREATEDB password 'admin';
+create database comidas;
+grant all privileges on database comidas to aldo;
+
+//descomentar extension=php_pdo_pgsql.dll en php.ini
