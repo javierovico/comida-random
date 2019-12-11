@@ -1,3 +1,22 @@
+//una vez que se descarga el git, ejecutar:
+Try these steps:
+
+Make sure you copy all of the project files including the hidden ones(.env).
+Prepare your destination computer as in http://laravel.com/docs/
+Check you have all the necessary PHP extensions available in php.ini as in above link requirements. Also, watch your PHP version!
+Install composer https://getcomposer.org/doc/00-intro.md
+When copied, go to your destination folder and run composer install.
+Run php artisan key:generate from the command line.
+
+Run php artisan cache:clear from command line
+
+http://php.net/manual/en/install.windows.commandline.php
+Make sure your webserver is serving pages from project/public folder.
+
+If laravel is failing, check the log file to see the cause
+
+your_project/storage/logs/laravel.log
+
 // Anotaciones de postgre para sunakki
 create user aldo SUPERUSER CREATEDB password 'admin';
 create database comidas;

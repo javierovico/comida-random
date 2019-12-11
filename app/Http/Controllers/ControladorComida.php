@@ -23,7 +23,10 @@ class ControladorComida extends Controller
     public function aleatorio($idAleatorio = null){
         try{
             $comida = $idAleatorio==null?Comida::all()->random():Comida::find($idAleatorio);
-            return ['comida' => $comida, 'ingredientes' => $comida->ingredientes];
+            foreach($comida->comidaIngredientes as $comidaIngrediente){
+                $comidaIngrediente->ingredientes;   //refesca cada ingrediente de la comida ingrediente (para obtener el thumbnail)
+            }
+            return $comida;
         } catch (Exception $e){
             return ['error'=>true,'mensaje'=>$e->getMessage()];
         }
