@@ -17,9 +17,9 @@ class ComidaIngrediente extends Model
 //        return $this->belongsTo('App\Comida','id','comida');    //se sobreenteinde que se refiere al id -> comida
 //    }
 //
-//    public function ingredientes(){
-//        return $this->hasMany('App\Ingrediente','nombre','ingrediente');    //se sobreenteinde que se refiere al id -> comida
-//    }
+    public function ingredientes(){
+        return $this->hasOne('App\Ingrediente','nombre','ingrediente');    //se sobreenteinde que se refiere al id -> comida
+    }
 
     /**
      * @return array|mixed
