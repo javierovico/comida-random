@@ -18,7 +18,8 @@
                 <div class="col-sm-8 col-md-7 py-4">
                     <h4 class="text-white">Información</h4>
                     <p class="text-muted">
-                        Breve página que trata sobre la utilización del API de comidas proporciona por <a href="https://www.themealdb.com/">TheMealDB</a>
+                        Breve página que trata sobre la utilización del API de comidas proporciona por <a href="https://www.themealdb.com/">TheMealDB</a><br>
+                        Cada vez que se consula una comida al azar desde la api externa, se guarda una copia en la base de datos interna.
                     </p>
                 </div>
                 <div class="col-sm-4 offset-md-1 py-4">
@@ -50,7 +51,8 @@
                 Si tenes hambre, tenes mucho tiempo libre y te encontrás aburrido, presioná el botón de abajo y preparate algo que, probablemente, nunca viste :)
             </p>
             <p>
-                <a id="botonGenerar" href="#" class="btn btn-primary my-2">¡Generar ya!</a>
+                <a id="botonGenerar" href="#" class="btn btn-primary my-2">¡Generar desde base de datos Interna!</a>
+                <a id="botonGenerarExterno" href="#" class="btn btn-secondary my-2">¡Generar desde API externa!</a>
             </p>
         </div>
     </section>
@@ -60,7 +62,22 @@
 
         </div>
     </div>
+    <footer id="footer" class="section-bg">
+        <div class="footer-top">
+            <div class="container">
+                <div class="footer-links">
+                    <h4>Links Utiles</h4>
+                    <ul>
+                        <li><a href="{{ url('/ingrediente') }}">Ver ingredientes de la base de datos</a></li>
+                        <li><a href="{{ url('/comida') }}">Ver comidas de la base de datos</a></li>
+                    </ul>
+                </div>
 
+            </div>
+        </div>
+
+
+    </footer>
 </main>
 
 
@@ -72,56 +89,66 @@
         integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
         crossorigin="anonymous"></script>
 <script>
-    var puta;
-    $("#botonGenerar").click(function(){
+    const generador = function (fuente) {
         $("#lugar-comida").html('');
-        $.ajax({url: "intermedio.php", success: function(result){
-                puta = result;
+        $.ajax({
+            url: "{{ url('/comida') }}/" + fuente, success: function (result) {
                 console.log(result);
-                var listaIngrediente = '';
-                for(var i=0; i<result['ingredientes'].length;i++){
-                    var ingrediente = result['ingredientes'][i];
-                    listaIngrediente += '' +
-                        '<div class="col-sm-3" style="padding-top: 15px;">' +
-                        '   <div class="card" style="height: 100%">' +
-                        '       <img class="card-img-top" src="'+ingrediente.thumbnail+'" alt="'+ingrediente.thumbnail+'">' +
-                        '       <div class="card-body">' +
-                        '           <h5 class="card-title">'+ingrediente.nombre +'</h5>' +
-                        '           <p class="card-text">'+ingrediente.cantidad+'</p>' +
+                if(result.error !=null){
+                    alert(result.mensaje);
+                }else {
+                    var listaIngrediente = '';
+                    for (var i = 0; i < result['comida_ingredientes'].length; i++) {
+                        var ingrediente = result['comida_ingredientes'][i];
+                        listaIngrediente += '' +
+                            '<div class="col-12 col-sm-6 col-md-4 col-lg-3" style="padding-top: 15px;">' +
+                            '   <div class="card" style="height: 100%">' +
+                            '       <img class="card-img-top" src="' + ingrediente.ingredientes.thumbnail_grande + '" alt="' + ingrediente.nombre + '">' +
+                            '       <div class="card-body">' +
+                            '           <h5 class="card-title">' + ingrediente.ingrediente + '</h5>' +
+                            '           <p class="card-text">' + ingrediente.cantidad + '</p>' +
+                            '       </div>' +
+                            '   </div>' +
+                            '</div>'
+                    }
+                    var nuevosValores =
+                        '<header class="entry-header">' +
+                        '   <h1 class="entry-title">' + result['nombre'] + '</h1>' +
+                        '</header>' +
+                        '<div class="row">' +
+                        '   <div class="col-sm-7">' +
+                        '       <div class="card bg-light">' +
+                        '           <div class="card-header h4">Praparación</div>' +
+                        '           <div class="card-body">' +
+                        '               <p class="card-text">' + result['instrucciones'] + '</p>' +
+                        '           </div>' +
+                        '       </div>' +
+                        '       <h4>Ingredientes</h4>' +
+                        '       <div class="container">' +
+                        '           <div class="row">' +
+                        '              ' + listaIngrediente +
+                        '           </div>' +
                         '       </div>' +
                         '   </div>' +
-                        '</div>'
+                        '   <div class="col-sm-5">' +
+                        '       <h4>Resultado:</h4>' +
+                        '       <img src="' + result['thumbnail'] + '" class="img-thumbnail" alt="Responsive image">' +
+                        '       <h4>Video Explicativo</h4>' +
+                        '       <div class="embed-responsive embed-responsive-16by9">\n' +
+                        '           <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/' + result['youtube'] + '"></iframe>' +
+                        '       </div>' +
+                        '   </div>' +
+                        '</div>';
+                    $("#lugar-comida").html(nuevosValores)
                 }
-                var nuevosValores =
-                    '<header class="entry-header">' +
-                    '   <h1 class="entry-title">'+result['nombre']+'</h1>' +
-                    '</header>' +
-                    '<div class="row">' +
-                    '   <div class="col-sm-7">' +
-                    '       <div class="card bg-light">' +
-                    '           <div class="card-header h4">Praparación</div>' +
-                    '           <div class="card-body">' +
-                    '               <p class="card-text">'+result['instrucciones']+'</p>' +
-                    '           </div>' +
-                    '       </div>' +
-                    '       <h4>Ingredientes</h4>'+
-                    '       <div class="container">' +
-                    '           <div class="row">' +
-                    '              '+listaIngrediente+
-                    '           </div>' +
-                    '       </div>'+
-                    '   </div>' +
-                    '   <div class="col-sm-5">' +
-                    '       <h4>Resultado:</h4>' +
-                    '       <img src="'+result['thumbnail']+'" class="img-thumbnail" alt="Responsive image">' +
-                    '       <h4>Video Explicativo</h4>' +
-                    '       <div class="embed-responsive embed-responsive-16by9">\n' +
-                    '           <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/'+result['youtube']+'"></iframe>' +
-                    '       </div>' +
-                    '   </div>' +
-                    '</div>';
-                $("#lugar-comida").html(nuevosValores)
-            }});
+            }
+        });
+    };
+    $("#botonGenerar").click(function(){
+        generador('aleatorio')
+    });
+    $("#botonGenerarExterno").click(function(){
+        generador('aleatorio-externo')
     });
 </script>
 </body>
