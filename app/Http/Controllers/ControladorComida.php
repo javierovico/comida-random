@@ -35,46 +35,50 @@ class ControladorComida extends Controller
     /**
      * @return mixed
      * Optiene una comida del api externa, lo guarda en la base de datos local, y lo envia
-     * Eventualmente, si la comida ya estaba guardada, actualiza todos los posibles cambios (el nombre, proceso, etc (todx menos el id))
-     * Eventualmente, si el ingrediente ya estaba en la base, se actualizan los posibles cambios (en este caso los thumbnails)
-     * Eventualmente, si ya existia el dato en la tabla comidas_ingredientes, se actualiza la cantidad
+     * Eventualmente, si la comida ya estaba guardada, no actualiza los valores
+     * Eventualmente, si el ingrediente ya estaba en la base, no se actualizan valores
      */
     public function aleatorioExterno(){
         $respuestaApiExterna = $this::optenerNuevaRespuesta();
         if($respuestaApiExterna['error'] == true){
             return ['error' => true, 'mensaje'=>'error con la api externa proveida'];
         }else{
-            $comidaNueva = Comida::find($respuestaApiExterna['id']);
-            if($comidaNueva == null){   //todavia no existe
-                $comidaNueva = new Comida([
-                    'id' => $respuestaApiExterna['id']
-                ]);
-            }
-            $comidaNueva->nombre = $respuestaApiExterna['nombre'];
-            $comidaNueva->instrucciones = $respuestaApiExterna['instrucciones'];
-            $comidaNueva->thumbnail = $respuestaApiExterna['thumbnail'];
-            $comidaNueva->fuente = $respuestaApiExterna['fuente'];
-            $comidaNueva->youtube = $respuestaApiExterna['youtube'];
-            $comidaNueva->save();       //se crea nuevo o se actualiza
-            foreach($respuestaApiExterna['ingredientes'] as $ingredienteArray){
-                $ingrediente = Ingrediente::find($ingredienteArray['nombre']);
-                if($ingrediente == null){   //si todavia no existia el ingrediente
-                    $ingrediente = new Ingrediente(['nombre' => $ingredienteArray['nombre']]);
+            try{
+                //Trata de encontrar en la base de datos local una comida con el mismo id retornado por la API externa
+                $comidaNueva = Comida::find($respuestaApiExterna['id']);
+                if($comidaNueva == null){   //todavia no existe en la base de datos local
+                    $comidaNueva = new Comida([
+                        'id' => $respuestaApiExterna['id'],
+                        'nombre' => $respuestaApiExterna['nombre'],
+                        'instrucciones'  => $respuestaApiExterna['instrucciones'],
+                        'thumbnail'  => $respuestaApiExterna['thumbnail'],
+                        'fuente'  => $respuestaApiExterna['fuente'],
+                        'youtube'  => $respuestaApiExterna['youtube'],
+                    ]);
+                    $comidaNueva->save();       //se crea nuevo en la BD
+                    foreach($respuestaApiExterna['ingredientes'] as $ingredienteArray){ //se itera los ingredientes
+                        $ingrediente = Ingrediente::find($ingredienteArray['nombre']);  //busca el ingrediente en la BD
+                        if($ingrediente == null){   //si todavia no existia el ingrediente
+                            $ingrediente = new Ingrediente([
+                                'nombre' => $ingredienteArray['nombre'],
+                                'thumbnail_grande' => $ingredienteArray['thumbnail_grande'],
+                                'thumbnail_pequenho' => $ingredienteArray['thumbnail_pequenho'],
+                            ]);
+                            $ingrediente->save();   //se crea nuevo ingrediente
+                        }
+                        //agregar a ingrediente x comida
+                        $comidaIngrediente = new ComidaIngrediente([
+                            'comida' => $comidaNueva->id,
+                            'ingrediente' =>$ingrediente->nombre,
+                            'cantidad' => $ingredienteArray['cantidad'],
+                        ]);
+                        $comidaIngrediente->save(); //se gaurda
+                    }
                 }
-                $ingrediente->thumbnail_grande = $ingredienteArray['thumbnail_grande'];
-                $ingrediente->thumbnail_pequenho = $ingredienteArray['thumbnail_pequenho'];
-                $ingrediente->save();   //se crea nuevo o se actualiza
-                //agregar a ingrediente x comida
-                $comidaIngrediente = ComidaIngrediente::where('comida','=',$comidaNueva->id)
-                    ->where('ingrediente','=',$ingrediente->nombre)
-                    ->first();
-                if($comidaIngrediente == null){ //todavia no existia
-                    $comidaIngrediente = new ComidaIngrediente(['comida' => $comidaNueva->id, 'ingrediente' =>$ingrediente->nombre]);
-                }
-                $comidaIngrediente->cantidad = $ingredienteArray['cantidad'];   //lo que se Update o agrega
-                $comidaIngrediente->save(); //se gaurda o se actualiza
+                return $this->aleatorio($comidaNueva->id);
+            }catch (Exception $e){
+                return ['error'=>true, 'mensaje'=>$e->getMessage()];
             }
-            return $this->aleatorio($comidaNueva->id);
         }
     }
 
@@ -145,6 +149,10 @@ class ControladorComida extends Controller
     }
 
 
+    /**
+     * @return array
+     * Solo se encarga de cambiar el formato del json proveido por la API externa
+     */
     function optenerNuevaRespuesta(){
         $urlApi = 'https://www.themealdb.com/api/json/v1/1/';
         $urlComidaRandom = $urlApi.'random.php';
